@@ -1,0 +1,28 @@
+version: "3.8"
+
+networks:
+  streamlitdocker:
+    name: streamlitdocker
+    driver: bridge
+
+services:
+  streamlit:
+    image: "streamlit/dashboar_asocamacho:${DATE:-latest}"
+    container_name: streamlit_dashboard_asocamacho
+    hostname: streamlit_dashboard_asocamacho
+    pull_policy: never
+    tty: true
+    ports:
+      - "8501:8501"
+    build:
+      context: .
+      dockerfile: docker/dashboard/dashboard.df
+    networks:
+      - streamlitdocker
+    volumes:
+      - ".:/app"
+    healthcheck:
+      test: ["CMD", "ps", "aux", "|","grep","streamlit"]
+      timeout: 10s
+      retries: 10
+
