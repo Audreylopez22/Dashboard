@@ -3,6 +3,18 @@ import requests
 import pandas as pd
 import plotly.express as px
 
+if (
+    "authentication_status" not in st.session_state
+    or st.session_state.authentication_status is None
+    or st.session_state.authentication_status is False
+):
+    st.warning("You must login to access this page.")
+    st.markdown(
+        f'<meta http-equiv="refresh" content="0;url={st.secrets.urls.login}">',
+        unsafe_allow_html=True,
+    )
+    st.stop()
+
 # --- CONFIGURATION ---
 API_KEY = st.secrets["QUINTADB_API_KEY"]
 APP_ID = st.secrets["APP_ID"]
@@ -225,7 +237,51 @@ if 'master_df' in st.session_state:
     # Tabla de detalles
     with st.expander("🔍 Ver tabla detallada"):
         st.dataframe(filtered_df, use_container_width=True)
-    
+
+with tab2:
+    if filtered_df.empty:
+        st.warning("No hay datos para mostrar en la sección académica.")
+    else:
+        # --- FILA 1: CONTINUIDAD Y NIVEL ALCANZADO ---
+        col_ac1, col_ac2 = st.columns(2)
+
+        with col_ac1:
+            st.markdown("#### ¿Continuó con sus estudios?")
+            cont_col = '¿Continuó con sus estudios?'
+            if cont_col in filtered_df.columns:
+                # Limpieza rápida
+                cont_data = filtered_df[cont_col].fillna('No reporta').str.upper().str.strip()
+                df_cont = cont_data.value_counts().reset_index()
+                df_cont.columns = ['Estado', 'Cantidad']
+                
+                fig_cont = px.pie(
+                    df_cont, names='Estado', values='Cantidad', 
+                    hole=0.4,
+                    color_discrete_sequence=px.colors.qualitative.Set3
+                )
+                st.plotly_chart(fig_cont, use_container_width=True)
+
+        with col_ac2:
+            st.markdown("#### Nivel Académico Alcanzado")
+            # Vamos a consolidar las columnas de "Tiene..."
+            niveles = {
+                'Especialización': filtered_df['¿Tiene especialización?'].str.upper().str.strip().isin(['SÍ', 'SI']).sum(),
+                'Maestría': filtered_df['¿Tiene maestría?'].str.upper().str.strip().isin(['SÍ', 'SI']).sum(),
+                'Doctorado': filtered_df['¿Tiene doctorado?'].str.upper().str.strip().isin(['SÍ', 'SI']).sum(),
+                'Segunda Carrera': filtered_df['¿Tiene segunda carrera universitaria?'].str.upper().str.strip().isin(['SÍ', 'SI']).sum()
+            }
+            df_niveles = pd.DataFrame(list(niveles.items()), columns=['Nivel', 'Cantidad'])
+            
+            fig_niv = px.bar(
+                df_niveles, x='Nivel', y='Cantidad', 
+                text_auto=True,
+                color='Nivel',
+                color_discrete_sequence=px.colors.qualitative.Pastel
+            )
+            fig_niv.update_layout(showlegend=False)
+            st.plotly_chart(fig_niv, use_container_width=True)
+
+        st.divider()
 
 with tab3:
         if filtered_df.empty:
