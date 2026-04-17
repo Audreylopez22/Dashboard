@@ -135,7 +135,7 @@ if 'master_df' in st.session_state:
     unit_col = 'Unidad Academica'
     if unit_col in original_df.columns:
         available_units = sorted(original_df[unit_col].unique())
-        selected_units = st.sidebar.multiselect("Unidad Academica",available_units)
+        selected_units = st.sidebar.multiselect("Unidad Academica", available_units, placeholder="Todos")
         if selected_units:
             filtered_df = filtered_df[filtered_df[unit_col].isin(selected_units)]
             
@@ -143,7 +143,7 @@ if 'master_df' in st.session_state:
     program_col = 'Nombre del programa'
     if program_col in original_df.columns:
         available_programs = sorted(original_df[program_col].unique())
-        selected_program = st.sidebar.multiselect("Nombre del programa", available_programs)
+        selected_program = st.sidebar.multiselect("Nombre del programa", available_programs, placeholder="Todos")
         if selected_program:
             filtered_df = filtered_df[filtered_df[program_col].isin(selected_program)]
             
@@ -178,7 +178,7 @@ if 'master_df' in st.session_state:
                 text_auto=True, color_discrete_sequence=px.colors.qualitative.Safe
             )
             fig_gender.update_layout(showlegend=False)
-            st.plotly_chart(fig_gender, use_container_width=True)
+            st.plotly_chart(fig_gender, width='stretch')
 
         with col2:
             if 'Estrato social' in filtered_df.columns:
@@ -187,7 +187,7 @@ if 'master_df' in st.session_state:
                 estrato_data.columns = ['Estrato', 'Cantidad']
 
                 fig = px.bar(estrato_data, x='Estrato', y='Cantidad', text_auto=True)
-                st.plotly_chart(fig, use_container_width=True)
+                st.plotly_chart(fig, width='stretch')
     
         chart_col1, chart_col2 = st.columns(2)
 
@@ -202,7 +202,7 @@ if 'master_df' in st.session_state:
                     color_discrete_sequence=['#636EFA']
                 )
                 fig_edad.update_layout(yaxis_title="Cantidad de Egresados", bargap=0.1)
-                st.plotly_chart(fig_edad, use_container_width=True)
+                st.plotly_chart(fig_edad, width='stretch')
 
         with chart_col2:
             if year_col in filtered_df.columns and not filtered_df.empty:
@@ -211,7 +211,7 @@ if 'master_df' in st.session_state:
                 timeline_data = original_df[year_col].value_counts().reset_index().sort_values(year_col)
                 timeline_data.columns = ['Año', 'Cantidad']
                 fig_timeline = px.line(timeline_data, x='Año', y='Cantidad', markers=True)
-                st.plotly_chart(fig_timeline, use_container_width=True)    
+                st.plotly_chart(fig_timeline, width='stretch')    
         
         st.write("### Distribución Institucional por Unidad Académica")
         unit_col = 'Unidad Academica' 
@@ -230,13 +230,13 @@ if 'master_df' in st.session_state:
             )
             # Al estar fuera del bloque 'with', ocupará todo el ancho disponible
             fig_unit.update_layout(xaxis_title="Unidad Académica", showlegend=False)
-            st.plotly_chart(fig_unit, use_container_width=True)
+            st.plotly_chart(fig_unit, width='stretch')
         else:
             st.info("No hay datos disponibles para Unidades Académicas.")
 
     # Tabla de detalles
     with st.expander("🔍 Ver tabla detallada"):
-        st.dataframe(filtered_df, use_container_width=True)
+        st.dataframe(filtered_df, width='stretch')
 
 with tab2:
     if filtered_df.empty:
@@ -259,7 +259,7 @@ with tab2:
                     hole=0.4,
                     color_discrete_sequence=px.colors.qualitative.Set3
                 )
-                st.plotly_chart(fig_cont, use_container_width=True)
+                st.plotly_chart(fig_cont, width='stretch')
 
         with col_ac2:
             st.markdown("#### Nivel Académico Alcanzado")
@@ -279,8 +279,121 @@ with tab2:
                 color_discrete_sequence=px.colors.qualitative.Pastel
             )
             fig_niv.update_layout(showlegend=False)
-            st.plotly_chart(fig_niv, use_container_width=True)
+            st.plotly_chart(fig_niv, width='stretch')
 
+        col1, col2 = st.columns(2)
+        
+        with col1:
+            st.markdown("#### ¿Quiere participar en un semillero?")
+            if '¿Quiere participar en un semillero?' in filtered_df.columns:
+                data = filtered_df['¿Quiere participar en un semillero?'].value_counts().reset_index()
+                fig = px.pie(
+                    data,
+                    names='¿Quiere participar en un semillero?',  # Corrected: use the column with categories
+                    values='count',  # Corrected: use the 'count' column for values
+                    hole=0.5,
+                    color_discrete_sequence=px.colors.qualitative.Pastel
+                )
+                st.plotly_chart(fig, width='stretch')
+
+        with col2:
+            st.markdown("#### ¿Piensa estudiar en 5 años?")
+            if '¿Piensa estudiar en 5 años?' in filtered_df.columns:
+                data = filtered_df['¿Piensa estudiar en 5 años?'].value_counts().reset_index()
+                fig = px.pie(data, names='¿Piensa estudiar en 5 años?', values='count', hole=0.5, color_discrete_sequence=px.colors.qualitative.Safe)
+                st.plotly_chart(fig, width='stretch')
+
+        col3, col4 = st.columns(2)
+        with col3:
+            st.markdown("#### ¿Haría un posgrado en UNICAMACHO?")
+            # Insight Senior: Este es el KPI de "Retención de Cliente" o Lealtad de marca.
+            if '¿Haría un posgrado en UNICAMACHO?' in filtered_df.columns:
+                data = filtered_df['¿Haría un posgrado en UNICAMACHO?'].value_counts().reset_index()
+                fig = px.pie(data, names='¿Haría un posgrado en UNICAMACHO?', values='count', hole=0.5,
+                            color_discrete_sequence=['#00CC96', '#EF553B', '#AB63FA'])
+                st.plotly_chart(fig, width='stretch')
+        
+        with col4:
+            st.markdown("#### Forma de estudio ")
+            # Insight Senior: Este es el KPI de "Retención de Cliente" o Lealtad de marca.
+            if 'Forma de estudio' in filtered_df.columns:
+                data = filtered_df['Forma de estudio'].value_counts().reset_index()
+                fig = px.pie(data, names='Forma de estudio', values='count', hole=0.5,
+                            color_discrete_sequence=['#00CC96', '#EF553B', '#AB63FA'])
+                st.plotly_chart(fig, width='stretch')
+
+        st.divider()
+
+        # --- FILA 2: FORMACIÓN ACUMULADA E IDIOMAS ---
+        col5, col6 = st.columns(2)
+
+        with col5:
+            st.markdown("#### ¿Cuántos estudios ha realizado?")
+            if '¿Cuántos estudios ha realizado?' in filtered_df.columns:
+                # Senior Data Tip: Forzamos a que el eje X sea discreto (1, 2, 3...)
+                fig = px.histogram(
+                    filtered_df, 
+                    x='¿Cuántos estudios ha realizado?', 
+                    nbins=10, 
+                    text_auto=True,
+                    color_discrete_sequence=['#636EFA'])
+                fig.update_layout(bargap=0.2, xaxis_title="Cantidad de estudios extras", yaxis_title="Cantidad")
+                st.plotly_chart(fig, width='stretch')
+
+        with col6:
+            st.markdown("#### ¿Tiene certificaciones de idiomas?")
+            if '¿Tiene certificaciones de idiomas?' in filtered_df.columns:
+                data = filtered_df['¿Tiene certificaciones de idiomas?'].value_counts().reset_index()
+                fig = px.bar(
+                    data, 
+                    x='¿Tiene certificaciones de idiomas?', 
+                    y='count', 
+                    text_auto=True, 
+                    color='¿Tiene certificaciones de idiomas?', 
+                    color_discrete_sequence=px.colors.qualitative.Prism
+                )
+                fig.update_layout(
+                    showlegend=False, 
+                    xaxis_title="", 
+                    yaxis_title="Cantidad",
+                    xaxis={'type': 'category'} # Esto evita que la barra se "estire"
+                )
+                fig.update_traces(width=0.5)            
+                st.plotly_chart(fig, width='stretch')
+
+        st.divider()
+
+        # --- FILA 3: INTERÉS EN EDUCACIÓN FUTURA (COMPUESTO) ---
+        st.markdown("#### Demanda Potencial por Tipo de Formación")
+        
+        # Ingeniería de Datos: Transformamos múltiples columnas en un DF largo para Plotly
+        intereses = {
+            'Posgrados': '¿Está interesado en posgrados (especialización, maestría, doctorado)?',
+            'Idiomas': '¿Está interesado en idiomas?',
+            'Diplomados': '¿Está interesado en diplomados?',
+            'Cursos Cortos': '¿Está interesado en cursos cortos?'
+        }
+        
+        list_data = []
+        for label, col in intereses.items():
+            if col in filtered_df.columns:
+                counts = filtered_df[col].value_counts()
+                for resp in ['Sí', 'No']:
+                    list_data.append({
+                        'Categoría': label,
+                        'Interés': resp,
+                        'Cantidad': counts.get(resp, 0) + counts.get(resp.upper(), 0)
+                    })
+        
+        df_interes = pd.DataFrame(list_data)
+        
+        if not df_interes.empty:
+            fig = px.bar(df_interes, x='Cantidad', y='Categoría', color='Interés',
+                        barmode='group', orientation='h',
+                        color_discrete_map={'Sí': '#00CC96', 'No': '#EF553B'},
+                        text_auto=True)
+            fig.update_layout(legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1))
+            st.plotly_chart(fig, width='stretch')
         st.divider()
 
 with tab3:
@@ -292,7 +405,7 @@ with tab3:
             col_main1, col_main2 = st.columns(2) # El boxplot necesita más espacio
 
             with col_main1:
-                st.markdown("#### Trabaja Actualmente")
+                st.markdown("#### ¿Trabaja actualmente?")
                 # Gráfico de Dona (más moderno que el Pie simple)
                 fig_job = px.pie(
                     filtered_df, names='¿Trabaja actualmente?', 
@@ -300,7 +413,7 @@ with tab3:
                     color_discrete_sequence=px.colors.qualitative.Pastel
                 )
                 fig_job.update_layout(showlegend=True, legend=dict(orientation="h", yanchor="bottom", y=-0.2))
-                st.plotly_chart(fig_job, use_container_width=True)
+                st.plotly_chart(fig_job, width='stretch')
 
 
             with col_main2:
@@ -313,14 +426,14 @@ with tab3:
                     salary_data.columns = ['Ingreso', 'Cantidad']
 
                     fig = px.bar(salary_data, x='Ingreso', y='Cantidad', text_auto=True)
-                    st.plotly_chart(fig, use_container_width=True)
+                    st.plotly_chart(fig, width='stretch')
 
             # --- FILA 3: Inserción y Experiencia ---
             st.divider()
             col_ins1, col_ins2 = st.columns(2)
 
             with col_ins1:
-                st.markdown("#### Cuanto tardó en encontrar empleo")
+                st.markdown("#### ¿Cuánto tardó en encontrar un empleo después de graduarse?")
                 col_name = '¿Cuánto tardó en encontrar un empleo después de graduarse?'
                 if col_name in filtered_df.columns and not filtered_df.empty:
                     # 1. Definimos el orden lógico manual
@@ -349,7 +462,7 @@ with tab3:
                         yaxis_title="Cantidad de Egresados"
                     )
                     
-                    st.plotly_chart(fig_time, use_container_width=True)
+                    st.plotly_chart(fig_time, width='stretch')
 
             with col_ins2:
                 st.markdown("#### Años de Experiencia Laboral")
@@ -360,7 +473,7 @@ with tab3:
                         marginal="rug", # Añade una alfombra de densidad abajo
                         color_discrete_sequence=['#636EFA']
                     )
-                    st.plotly_chart(fig_exp, use_container_width=True)
+                    st.plotly_chart(fig_exp, width='stretch')
 
             # --- FILA 4: Detalles de la Empresa y Cargo ---
             st.divider()
@@ -368,7 +481,7 @@ with tab3:
 
             with col_det1:
                 if '¿Tiene tarjeta profesional? ' in filtered_df.columns:
-                    st.write("### Tarjeta profesional")
+                    st.write("### ¿Tiene tarjeta profesional?")
                     profesional_card_col = '¿Tiene tarjeta profesional? '
                     filtered_df[profesional_card_col] = filtered_df[profesional_card_col].astype(str)
 
@@ -376,10 +489,10 @@ with tab3:
                     salary_data.columns = ['Tarjeta profesional', 'Cantidad']
 
                     fig = px.bar(salary_data, x='Tarjeta profesional', y='Cantidad', text_auto=True)
-                    st.plotly_chart(fig, use_container_width=True)
+                    st.plotly_chart(fig, width='stretch')
 
             with col_det2:
-                st.markdown("#### Ascensos")
+                st.markdown("#### ¿Ha ascendido o cambiado de cargo?")
                 ascenso_data = filtered_df['¿Ha ascendido o cambiado de cargo?'].value_counts()
                 fig_asc = px.pie(
                     names=ascenso_data.index, 
@@ -387,7 +500,7 @@ with tab3:
                     hole=0.5,
                     color_discrete_sequence=['#FF6B6B', '#4ECDC4']
                 )
-                st.plotly_chart(fig_asc, use_container_width=True)
+                st.plotly_chart(fig_asc, width='stretch')
 
             # --- FILA 5: El Insight Maestro (Relación Estudio vs Empleo) ---
             st.divider()
@@ -397,7 +510,7 @@ with tab3:
             col_uni1, col_uni2 = st.columns([1, 1.5])
 
             with col_uni1:
-                st.markdown("#### ¿Cotiza actualmente?")
+                st.markdown("#### ¿Cotiza en el sistema de seguridad de Colombia?")
                 # Normalización y conteo
                 if '¿Cotiza en el sistema de seguridad de Colombia?' in filtered_df.columns:
                     # Limpiamos los datos para asegurar que 'Sí' y 'Si' sean lo mismo
@@ -413,7 +526,7 @@ with tab3:
                         color='Estado',
                         color_discrete_map={'SÍ': '#00CC96', 'NO': '#EF553B', 'NO REPORTA': '#AFAFAF'}
                     )
-                    st.plotly_chart(fig_pie_cotiza, use_container_width=True)
+                    st.plotly_chart(fig_pie_cotiza, width='stretch')
 
             # --- GRÁFICO 2: DESGLOSE DE BENEFICIOS (Solo para los que SÍ cotizan) ---
             with col_uni2:
@@ -446,6 +559,145 @@ with tab3:
                     )
                     
                     fig_ben.update_layout(showlegend=False, yaxis_title="Número de personas")
-                    st.plotly_chart(fig_ben, use_container_width=True)
+                    st.plotly_chart(fig_ben, width='stretch')
                 else:
                     st.info("No hay datos de beneficios para mostrar (nadie cotiza en este filtro).")
+
+with tab4: 
+    if filtered_df.empty:
+            st.warning("No hay datos disponibles con los filtros seleccionados.")
+    else:
+    
+        col1, col2 = st.columns(2)
+
+        with col1:
+            st.markdown("#### ¿Ha creado empresa?")
+            if '¿Ha creado empresa o emprendimiento?' in filtered_df.columns:
+                data_pie = filtered_df['¿Ha creado empresa o emprendimiento?'].value_counts().reset_index()
+                fig_pie = px.pie(
+                    data_pie, 
+                    values='count', 
+                    names='¿Ha creado empresa o emprendimiento?',
+                    hole=0.4, # Estilo Donut (más moderno UI)
+                    color_discrete_sequence=['#FF6B6B', '#4ECDC4']
+                )
+                fig_pie.update_layout(margin=dict(l=20, r=20, t=20, b=20))
+                st.plotly_chart(fig_pie, width='stretch')
+
+        with col2:
+            st.markdown("#### Etapa del emprendimiento")
+            if '¿En qué etapa se encuentra la empresa o emprendimiento?' in filtered_df.columns:
+                data_etapa = filtered_df['¿En qué etapa se encuentra la empresa o emprendimiento?'].value_counts().reset_index()
+                fig_etapa = px.bar(
+                    data_etapa,
+                    x='¿En qué etapa se encuentra la empresa o emprendimiento?',
+                    y='count',
+                    text_auto=True,
+                    color='¿En qué etapa se encuentra la empresa o emprendimiento?',
+                    color_discrete_sequence=px.colors.qualitative.Bold
+                )
+                fig_etapa.update_layout(showlegend=False, xaxis_title="", yaxis_title="Cantidad", xaxis={'categoryorder':'total descending'})
+                st.plotly_chart(fig_etapa, width='stretch')
+
+        # --- FILA 2: Actividad y Empleo ---
+        col3, col4 = st.columns(2)
+
+        with col3:
+            st.markdown("#### Apoyo recibido")
+            if '¿Recibió algún tipo de apoyo (formación y/o finanzas) para emprender?' in filtered_df.columns:
+                data_apoyo = filtered_df['¿Recibió algún tipo de apoyo (formación y/o finanzas) para emprender?'].value_counts().reset_index()
+                fig_apoyo = px.bar(
+                    data_apoyo,
+                    x='¿Recibió algún tipo de apoyo (formación y/o finanzas) para emprender?',
+                    y='count',
+                    color='¿Recibió algún tipo de apoyo (formación y/o finanzas) para emprender?',
+                    color_discrete_sequence=px.colors.qualitative.Pastel
+                )
+                fig_apoyo.update_layout(showlegend=False, xaxis_title="", yaxis_title="Cantidad")
+                st.plotly_chart(fig_apoyo, width='stretch')
+
+        with col4:
+            st.markdown("#### Generación de empleos")
+            if '¿Cuántos empleos ha generado (aparte de usted)?' in filtered_df.columns:
+                # Usamos histograma o barra según la distribución
+                fig_emp = px.histogram(
+                    filtered_df,
+                    x='¿Cuántos empleos ha generado (aparte de usted)?',
+                    text_auto=True,
+                    color_discrete_sequence=px.colors.qualitative.Bold
+                )
+                fig_emp.update_layout(xaxis_title="Número de empleos", yaxis_title="Frecuencia")
+                st.plotly_chart(fig_emp, width='stretch')
+
+        # --- FILA 3: Apoyos y Canales (Digitalización Insight) ---
+        st.divider()
+        st.write(" #### Actividad económica")
+        unit_col = '¿Cuál es la actividad económica del emprendimiento o empresa?' 
+        
+        if unit_col in filtered_df.columns and not filtered_df.empty:
+            unit_data = filtered_df[unit_col].value_counts().reset_index()
+            unit_data.columns = [unit_col, 'Cantidad']
+            
+            fig_unit = px.bar(
+                unit_data, 
+                x=unit_col, 
+                y='Cantidad', 
+                text_auto=True,
+                color=unit_col,
+                color_discrete_sequence=px.colors.qualitative.Prism
+            )
+            # Al estar fuera del bloque 'with', ocupará todo el ancho disponible
+            fig_unit.update_layout(xaxis_title="Actividad económica", showlegend=False)
+            st.plotly_chart(fig_unit, width='stretch')
+        else:
+            st.info("No hay datos disponibles para Actividad económica.")
+
+
+            st.markdown("#### Actividad económica")
+            if '¿Cuál es la actividad económica del emprendimiento o empresa?' in filtered_df.columns:
+                data_act = filtered_df['¿Cuál es la actividad económica del emprendimiento o empresa?'].value_counts().reset_index()
+                fig_act = px.bar(
+                    data_act,
+                    x='¿Cuál es la actividad económica del emprendimiento o empresa?',
+                    y='count',
+                    text_auto=True,
+                    color_discrete_sequence=['#FF6B6B', '#4ECDC4']
+                )
+                fig_act.update_layout(xaxis_title="", yaxis_title="Cantidad", xaxis={'categoryorder':'total descending'})
+                st.plotly_chart(fig_act, width='stretch')
+
+        st.write(" #### Canales de comunicación")
+        column_canales = '¿Su empresa o emprendimiento cuenta con alguno de los siguientes canales de comunicación?'
+
+        if column_canales in filtered_df.columns:
+            # Lógica de Data Engineering: Procesar opciones múltiples
+            series_canales = filtered_df[column_canales].dropna().astype(str).str.split(',')
+            
+            # Limpiamos espacios en blanco y aplanamos la lista
+            all_canales = [item.strip() for sublist in series_canales for item in sublist if item.strip()]
+            
+            if all_canales:
+                data_canales = pd.Series(all_canales).value_counts().reset_index()
+                data_canales.columns = ['Canal', 'count']
+
+                fig_canales = px.bar(
+                    data_canales,
+                    x='Canal',
+                    y='count',
+                    text_auto=True,
+                    color='Canal',
+                    color_discrete_sequence=px.colors.qualitative.Bold
+                )
+
+                # Ajustes de diseño para mejorar la legibilidad a ancho completo
+                fig_canales.update_layout(
+                    showlegend=False, 
+                    xaxis_title="", 
+                    yaxis_title="Cantidad de respuestas",
+                    height=500, # Aumentamos un poco la altura para que destaque
+                    xaxis={'categoryorder':'total descending'} # De más usado a menos usado
+                )
+                
+                st.plotly_chart(fig_canales, width='stretch')
+            else:
+                st.info("No hay datos registrados sobre canales de comunicación.")
