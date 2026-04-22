@@ -6,6 +6,8 @@ from datetime import datetime
 
 st.set_page_config(page_title="Login", page_icon="👋", layout="wide")
 
+st.title("🎓 Conecta Unicamacho")
+
 with open("./config.yaml", "r") as file:
     config = yaml.load(file, Loader=SafeLoader)
 
