@@ -3,6 +3,7 @@ import requests
 import pandas as pd
 import plotly.express as px
 import streamlit.components.v1 as components
+import plotly.io as pio
 
 if (
     "authentication_status" not in st.session_state
@@ -21,9 +22,33 @@ API_KEY = st.secrets["QUINTADB_API_KEY"]
 APP_ID = st.secrets["APP_ID"]
 ENTITY_ID = "cObmkYWRndWQPVoCkCWP5c"
 
+colors = [
+    '#4ad0f2',
+    '#bf51b2',
+    '#5E35B1', 
+    '#E93166',  
+    '#00ACC1',  
+    '#F0842E',  
+    '#689F38', 
+    '#E0E0E0', 
+    '#D72727', 
+    '#263238',  
+    '#C0D930',  
+    '#FBC02D',  
+    '#1A237E',
+    '#D32F2F',  
+    '#4FC3F7', 
+    '#AFB42B',
+    '#CE93D8',  
+    '#A1887F', 
+    '#FFEB3B'   
+]
+
+pio.templates.default = "plotly_white"
+
 st.set_page_config(page_title="Conecta Unicamacho", layout="wide")
 
-@st.cache_data
+#@st.cache_data
 def fetch_quintadb_data_companies():
     """Obtiene todos los registros de QuintaDB con paginación optimizada."""
     all_records = []
@@ -132,9 +157,9 @@ if not df_companies.empty:
             fig_sector = px.bar(
                 sector_counts, x='Cantidad', y='Sector', 
                 orientation='h', text_auto=True,
-                color='Cantidad', color_continuous_scale='Viridis'
+                color='Sector'
             )
-            fig_sector.update_layout(yaxis={'categoryorder':'total ascending'}, coloraxis_showscale=False, height=500)
+            fig_sector.update_layout(yaxis={'categoryorder':'total ascending'},showlegend=False, coloraxis_showscale=False, height=500)
             st.plotly_chart(fig_sector, use_container_width=True)
 
         st.divider()
@@ -154,7 +179,7 @@ if not df_companies.empty:
             
             fig_size = px.pie(
                 size_summary, names='Tamaño', values='Total', 
-                hole=0.5, color_discrete_sequence=px.colors.qualitative.Pastel
+                hole=0.5, color = 'Tamaño'
             )
             fig_size.update_layout(height=500)
             st.plotly_chart(fig_size, use_container_width=True)
@@ -231,7 +256,7 @@ if not df_companies.empty:
             fig_performance = px.bar(
                 performance_data, x='Cantidad', y='Calificación', 
                 orientation='h', text_auto=True, 
-                color='Cantidad', color_continuous_scale='RdYlGn'
+                color='Calificación'
             )
             fig_performance.update_layout(showlegend=False, coloraxis_showscale=False,yaxis={'categoryorder':'total ascending'}, yaxis_title="", height=400)
             st.plotly_chart(fig_performance, use_container_width=True)
@@ -258,7 +283,7 @@ if not df_companies.empty:
                 agreement_data, x='Cantidad', 
                 orientation='h',
                 y='Modalidad', 
-                text_auto=True, color='Cantidad',color_continuous_scale='Viridis'
+                text_auto=True, color='Modalidad'
             )
             fig_agreement.update_layout(
                 showlegend=False, 
@@ -294,9 +319,9 @@ if not df_companies.empty:
             fig_interests = px.bar(
                 interests_summary, x='Empresas', y='Área', 
                 orientation='h', text_auto=True, 
-                color='Empresas', color_continuous_scale='Blues'
+                color='Área'
             )
-            fig_interests.update_layout(coloraxis_showscale=False, yaxis={'categoryorder':'total ascending'}, height=600)
+            fig_interests.update_layout(coloraxis_showscale=False, yaxis={'categoryorder':'total ascending'},showlegend=False,  height=600)
             st.plotly_chart(fig_interests, use_container_width=True)
 
     # 3. SECCIÓN DE DATOS CRUDOS

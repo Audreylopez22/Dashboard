@@ -2,6 +2,7 @@ import streamlit as st
 import requests
 import pandas as pd
 import plotly.express as px
+import plotly.io as pio
 
 if (
     "authentication_status" not in st.session_state
@@ -20,7 +21,32 @@ API_KEY = st.secrets["QUINTADB_API_KEY"]
 APP_ID = st.secrets["APP_ID"]
 ENTITY_ID = "dcNJ3cGmndWOxcMCknpmo9"
 
-@st.cache_data
+colors = [
+    '#4ad0f2',
+    '#bf51b2',
+    '#5E35B1', 
+    '#E93166',  
+    '#00ACC1',  
+    '#F0842E',  
+    '#689F38', 
+    '#E0E0E0', 
+    '#D72727', 
+    '#263238',  
+    '#C0D930',  
+    '#FBC02D',  
+    '#1A237E',
+    '#D32F2F',  
+    '#4FC3F7', 
+    '#AFB42B',
+    '#CE93D8',  
+    '#A1887F', 
+    '#FFEB3B'   
+]
+
+pio.templates.default = "plotly_white"
+pio.templates[pio.templates.default].layout.colorway = colors
+
+#@st.cache_data
 def fetch_quintadb_data():
     """Obtiene todos los registros de QuintaDB con paginación optimizada."""
     all_records = []
@@ -178,18 +204,29 @@ if 'master_df' in st.session_state:
                 gender_data.columns = ['Género', 'Cantidad']
                 fig_gender = px.bar(
                 gender_data, x='Género', y='Cantidad', color='Género',
-                text_auto=True, color_discrete_sequence=px.colors.qualitative.Safe
+                text_auto=True, color_discrete_sequence=colors
             )
             fig_gender.update_layout(showlegend=False)
-            st.plotly_chart(fig_gender, width='stretch')
+            st.plotly_chart(fig_gender, width='stretch',theme="streamlit" )
 
         with col2:
             if 'Estrato social' in filtered_df.columns:
                 st.write("### Estrato Social")
-                estrato_data = filtered_df['Estrato social'].value_counts().reset_index()
+                exclude_list = ['N/A', 'Otro', 'Otros', 'No reporta', 'Sin información', 'nan', 'None']
+                df_plot = filtered_df[~filtered_df['Estrato social'].astype(str).isin(exclude_list)].copy()
+                n_total = filtered_df.shape[0]
+                n_valid = len(df_plot)
+                st.caption(f"Muestra: {n_valid} de {n_total} registros analizados.")
+                estrato_data = df_plot['Estrato social'].value_counts().reset_index()
                 estrato_data.columns = ['Estrato', 'Cantidad']
 
-                fig = px.bar(estrato_data, x='Estrato', y='Cantidad', text_auto=True)
+                fig = px.bar(estrato_data, x='Estrato', y='Cantidad', text_auto=True, color = 'Estrato')
+                fig.update_layout(
+                    showlegend=False, 
+                    yaxis_title="Cantidad",
+                    xaxis_title="Estrato",
+                    xaxis={'categoryorder':'category ascending'}
+                )
                 st.plotly_chart(fig, width='stretch')
     
         chart_col1, chart_col2 = st.columns(2)
@@ -202,7 +239,7 @@ if 'master_df' in st.session_state:
                     x='Edad', 
                     nbins=20, 
                     labels={'Edad': 'Años', 'count': 'Frecuencia'},
-                    color_discrete_sequence=['#636EFA']
+                    color_discrete_sequence=colors
                 )
                 fig_edad.update_layout(yaxis_title="Cantidad de Egresados", bargap=0.1)
                 st.plotly_chart(fig_edad, width='stretch')
@@ -229,7 +266,7 @@ if 'master_df' in st.session_state:
                 y='Cantidad', 
                 text_auto=True,
                 color=unit_col,
-                color_discrete_sequence=px.colors.qualitative.Prism
+                color_discrete_sequence=colors
             )
             # Al estar fuera del bloque 'with', ocupará todo el ancho disponible
             fig_unit.update_layout(xaxis_title="Unidad Académica", showlegend=False)
@@ -262,7 +299,6 @@ if 'master_df' in st.session_state:
                     fig_cont = px.pie(
                         df_cont, names='Estado', values='Cantidad', 
                         hole=0.4,
-                        color_discrete_sequence=px.colors.qualitative.Set3
                     )
                     st.plotly_chart(fig_cont, width='stretch')
 
@@ -284,7 +320,6 @@ if 'master_df' in st.session_state:
                     df_niveles, x='Nivel', y='Cantidad', 
                     text_auto=True,
                     color='Nivel',
-                    color_discrete_sequence=px.colors.qualitative.Pastel
                 )
                 fig_niv.update_layout(
                     showlegend=False,
@@ -307,7 +342,6 @@ if 'master_df' in st.session_state:
                         names='¿Quiere participar en un semillero?',  # Corrected: use the column with categories
                         values='count',  # Corrected: use the 'count' column for values
                         hole=0.5,
-                        color_discrete_sequence=px.colors.qualitative.Pastel
                     )
                     st.plotly_chart(fig, width='stretch')
 
@@ -329,7 +363,7 @@ if 'master_df' in st.session_state:
                     n_count = filtered_df['¿Haría un posgrado en UNICAMACHO?'].count()
                     st.caption(f"Muestra: {n_count} registros analizados")
                     fig = px.pie(data, names='¿Haría un posgrado en UNICAMACHO?', values='count', hole=0.5,
-                                color_discrete_sequence=['#00CC96', '#EF553B', '#AB63FA'])
+                                color = '¿Haría un posgrado en UNICAMACHO?')
                     st.plotly_chart(fig, width='stretch')
             
             with col4:
@@ -340,7 +374,7 @@ if 'master_df' in st.session_state:
                     n_count = filtered_df['Forma de estudio'].count()
                     st.caption(f"Muestra: {n_count} registros analizados")
                     fig = px.pie(data, names='Forma de estudio', values='count', hole=0.5,
-                                color_discrete_sequence=['#00CC96', '#EF553B', '#AB63FA'])
+                                color = 'Forma de estudio')
                     st.plotly_chart(fig, width='stretch')
 
             st.divider()
@@ -364,7 +398,7 @@ if 'master_df' in st.session_state:
                         x='¿Cuántos estudios ha realizado?', 
                         nbins=10, 
                         text_auto=True,
-                        color_discrete_sequence=['#636EFA'])
+                        color = '¿Cuántos estudios ha realizado?',)
                     fig.update_layout(bargap=0.2, xaxis_title="Cantidad de estudios extras", yaxis_title="Cantidad")
                     st.plotly_chart(fig, width='stretch')
 
@@ -380,7 +414,6 @@ if 'master_df' in st.session_state:
                         y='count', 
                         text_auto=True, 
                         color='¿Tiene certificaciones de idiomas?', 
-                        color_discrete_sequence=px.colors.qualitative.Prism
                     )
                     fig.update_layout(
                         showlegend=False, 
@@ -420,7 +453,7 @@ if 'master_df' in st.session_state:
             if not df_interes.empty:
                 fig = px.bar(df_interes, x='Cantidad', y='Categoría', color='Interés',
                             barmode='group', orientation='h',
-                            color_discrete_map={'Sí': '#00CC96', 'No': '#EF553B'},
+                            color_discrete_map={'Sí': '#4ad0f2', 'No': '#bf51b2'},
                             text_auto=True)
                 fig.update_layout(legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1))
                 st.plotly_chart(fig, width='stretch')
@@ -442,7 +475,7 @@ if 'master_df' in st.session_state:
                     fig_job = px.pie(
                         filtered_df, names='¿Trabaja actualmente?', 
                         hole=0.4,
-                        color_discrete_sequence=px.colors.qualitative.Pastel
+                        color = '¿Trabaja actualmente?'
                     )
                     fig_job.update_layout(showlegend=True, legend=dict(orientation="h", yanchor="bottom", y=-0.2))
                     st.plotly_chart(fig_job, width='stretch')
@@ -465,7 +498,7 @@ if 'master_df' in st.session_state:
                         salary_data = df_plot[col_name].value_counts().reset_index()
                         salary_data.columns = ['Ingreso', 'Cantidad']
 
-                        fig = px.bar(salary_data, x='Ingreso', y='Cantidad', text_auto=True)
+                        fig = px.bar(salary_data, x='Ingreso', y='Cantidad', text_auto=True , color= 'Ingreso')
                         st.plotly_chart(fig, width='stretch')
 
                 # --- FILA 3: Inserción y Experiencia ---
@@ -490,7 +523,7 @@ if 'master_df' in st.session_state:
                             df_plot, 
                             x=col_name,
                             text_auto=True,
-                            color_discrete_sequence=['#FFA500'],
+                            color = col_name,
                         )
                         
                         fig_time.update_layout(
@@ -517,7 +550,7 @@ if 'master_df' in st.session_state:
                             df_plot, x=col_name,
                             nbins=15,
                             marginal="rug", # Añade una alfombra de densidad abajo
-                            color_discrete_sequence=['#636EFA']
+                            color= col_name,
                         )
                         fig_exp.update_layout(
                             showlegend=False,
@@ -540,7 +573,7 @@ if 'master_df' in st.session_state:
                         salary_data = filtered_df[profesional_card_col].value_counts().reset_index()
                         salary_data.columns = ['Tarjeta profesional', 'Cantidad']
 
-                        fig = px.bar(salary_data, x='Tarjeta profesional', y='Cantidad', text_auto=True)
+                        fig = px.bar(salary_data, x='Tarjeta profesional', y='Cantidad', text_auto=True, color='Tarjeta profesional')
                         st.plotly_chart(fig, width='stretch')
 
                 with col_det2:
@@ -553,7 +586,6 @@ if 'master_df' in st.session_state:
                         names=ascenso_data.index, 
                         values=ascenso_data.values, 
                         hole=0.5,
-                        color_discrete_sequence=['#FF6B6B', '#4ECDC4']
                     )
                     st.plotly_chart(fig_asc, width='stretch')
 
@@ -579,7 +611,6 @@ if 'master_df' in st.session_state:
                             df_cotiza, names='Estado', values='Cantidad',
                             hole=0.5,
                             color='Estado',
-                            color_discrete_map={'SÍ': '#00CC96', 'NO': '#EF553B', 'NO REPORTA': '#AFAFAF'}
                         )
                         st.plotly_chart(fig_pie_cotiza, width='stretch')
 
@@ -610,7 +641,6 @@ if 'master_df' in st.session_state:
                             y='Cantidad',
                             text_auto=True,
                             color='Beneficio',
-                            color_discrete_sequence=px.colors.qualitative.Safe
                         )
                         
                         fig_ben.update_layout(showlegend=False, yaxis_title="Número de personas")
@@ -637,7 +667,6 @@ if 'master_df' in st.session_state:
                         values='count', 
                         names='¿Ha creado empresa o emprendimiento?',
                         hole=0.4, # Estilo Donut (más moderno UI)
-                        color_discrete_sequence=['#FF6B6B', '#4ECDC4']
                     )
                     fig_pie.update_layout(margin=dict(l=20, r=20, t=20, b=20))
                     st.plotly_chart(fig_pie, width='stretch')
@@ -657,7 +686,6 @@ if 'master_df' in st.session_state:
                         y='count',
                         text_auto=True,
                         color=col_name,
-                        color_discrete_sequence=px.colors.qualitative.Bold
                     )
                     fig_etapa.update_layout(showlegend=False, xaxis_title="", yaxis_title="Cantidad", xaxis={'categoryorder':'total descending'})
                     st.plotly_chart(fig_etapa, width='stretch')
@@ -679,7 +707,6 @@ if 'master_df' in st.session_state:
                         x=col_name,
                         y='count',
                         color=col_name,
-                        color_discrete_sequence=px.colors.qualitative.Pastel
                     )
                     fig_apoyo.update_layout(showlegend=False, xaxis_title="", yaxis_title="Cantidad")
                     st.plotly_chart(fig_apoyo, width='stretch')
@@ -696,7 +723,7 @@ if 'master_df' in st.session_state:
                         df_plot,
                         x=col_name,
                         text_auto=True,
-                        color_discrete_sequence=px.colors.qualitative.Bold
+                        color= col_name,
                     )
                     fig_emp.update_layout(showlegend=False, yaxis_title="Frecuencia",xaxis_title="Número de empleos", xaxis={'categoryorder':'total descending'})
                     
@@ -723,7 +750,6 @@ if 'master_df' in st.session_state:
                     orientation='h',
                     text_auto=True,
                     color=unit_col,
-                    color_discrete_sequence=px.colors.qualitative.Prism
                 )
                 # Al estar fuera del bloque 'with', ocupará todo el ancho disponible
                 fig_unit.update_layout(xaxis_title="Cantidad", yaxis_title="Actividad económica", showlegend=False)
@@ -746,7 +772,6 @@ if 'master_df' in st.session_state:
                         x=col_name,
                         y='count',
                         text_auto=True,
-                        color_discrete_sequence=['#FF6B6B', '#4ECDC4']
                     )
                     fig_act.update_layout(xaxis_title="", yaxis_title="Cantidad", xaxis={'categoryorder':'total descending'})
                     st.plotly_chart(fig_act, width='stretch')
@@ -770,7 +795,6 @@ if 'master_df' in st.session_state:
                         fig_canales = px.bar(
                             data_canales, x='Canal', y='count',
                             text_auto=True, color='Canal',
-                            color_discrete_sequence=px.colors.qualitative.Bold
                         )
                         fig_canales.update_layout(showlegend=False, xaxis_title="", yaxis_title="Cantidad de menciones", height=500, xaxis={'categoryorder':'total descending'})
                         st.plotly_chart(fig_canales, use_container_width=True)

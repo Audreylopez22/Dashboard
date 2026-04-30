@@ -2,8 +2,6 @@ import streamlit as st
 import yaml
 from yaml.loader import SafeLoader
 import streamlit_authenticator as stauth
-from datetime import datetime
-
 st.set_page_config(page_title="Login", page_icon="👋", layout="wide")
 
 st.title("🎓 Conecta Unicamacho")
@@ -18,12 +16,6 @@ for i, username in enumerate(config["credentials"]["usernames"]):
     config["credentials"]["usernames"][username]["password"] = st.secrets.passwords[username]
 
 plain_passwords = []
-
-now = datetime.now()
-now_day = now.day
-
-if now_day >= 1 and now_day < 6:
-    st.warning("Remember to pay your membership the first 5 days of the month.")
 
 
 def main():
