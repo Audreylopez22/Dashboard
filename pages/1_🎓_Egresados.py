@@ -385,21 +385,23 @@ if 'master_df' in st.session_state:
             with col5:
                 st.markdown("#### ¿Cuántos estudios ha realizado?")
                 if '¿Cuántos estudios ha realizado?' in filtered_df.columns:
+                    exclude_list = ['N/A','N/A ', 'Otro', 'Otros', 'No reporta', 'Sin información', 'nan', 'None']
                     df_validos = filtered_df[
                         (filtered_df['¿Cuántos estudios ha realizado?'].notna()) & 
-                        (filtered_df['¿Cuántos estudios ha realizado?'].astype(str).str.upper() != 'N/A')
+                        (~filtered_df['¿Cuántos estudios ha realizado?'].astype(str).isin(exclude_list))
                     ].copy()
+
                     n_total = filtered_df.shape[0]
                     n_count = len(df_validos)
                     st.caption(f"Muestra: {n_count} de {n_total} registros analizados")
                     # Senior Data Tip: Forzamos a que el eje X sea discreto (1, 2, 3...)
                     fig = px.histogram(
-                        filtered_df, 
+                        df_validos, 
                         x='¿Cuántos estudios ha realizado?', 
                         nbins=10, 
                         text_auto=True,
                         color = '¿Cuántos estudios ha realizado?',)
-                    fig.update_layout(bargap=0.2, xaxis_title="Cantidad de estudios extras", yaxis_title="Cantidad")
+                    fig.update_layout(showlegend=False,bargap=0.2, xaxis_title="Cantidad de estudios extras", yaxis_title="Cantidad")
                     st.plotly_chart(fig, width='stretch')
 
             with col6:
@@ -499,6 +501,7 @@ if 'master_df' in st.session_state:
                         salary_data.columns = ['Ingreso', 'Cantidad']
 
                         fig = px.bar(salary_data, x='Ingreso', y='Cantidad', text_auto=True , color= 'Ingreso')
+                        fig.update_layout(showlegend=False)
                         st.plotly_chart(fig, width='stretch')
 
                 # --- FILA 3: Inserción y Experiencia ---
@@ -574,6 +577,7 @@ if 'master_df' in st.session_state:
                         salary_data.columns = ['Tarjeta profesional', 'Cantidad']
 
                         fig = px.bar(salary_data, x='Tarjeta profesional', y='Cantidad', text_auto=True, color='Tarjeta profesional')
+                        fig.update_layout(showlegend=False)
                         st.plotly_chart(fig, width='stretch')
 
                 with col_det2:
