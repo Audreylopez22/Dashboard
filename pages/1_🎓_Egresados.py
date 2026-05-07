@@ -3,6 +3,7 @@ import requests
 import pandas as pd
 import plotly.express as px
 import plotly.io as pio
+from io import BytesIO
 
 if (
     "authentication_status" not in st.session_state
@@ -22,14 +23,13 @@ APP_ID = st.secrets["APP_ID"]
 ENTITY_ID = "dcNJ3cGmndWOxcMCknpmo9"
 
 colors = [
-    '#4ad0f2',
-    '#bf51b2',
+    '#0880c3',
+    '#94358a',
     '#5E35B1', 
-    '#E93166',  
-    '#00ACC1',  
-    '#F0842E',  
-    '#689F38', 
-    '#E0E0E0', 
+    '#fdc901',  
+    '#ec730a',  
+    '#92c01f',
+    '#f7ba8c', 
     '#D72727', 
     '#263238',  
     '#C0D930',  
@@ -40,7 +40,7 @@ colors = [
     '#AFB42B',
     '#CE93D8',  
     '#A1887F', 
-    '#FFEB3B'   
+    '#FFEB3B',
 ]
 
 pio.templates.default = "plotly_white"
@@ -178,7 +178,7 @@ if 'master_df' in st.session_state:
             
     # Para hacer el calculo para el grafico de edad. 
     if not filtered_df.empty and 'Fecha de nacimiento' in filtered_df.columns:
-        born_date= pd.to_datetime(filtered_df['Fecha de nacimiento'], errors = 'coerce')
+        born_date= pd.to_datetime(filtered_df['Fecha de nacimiento'], errors = 'coerce', dayfirst=True)
         filtered_df['Edad'] = (pd.Timestamp.now()-born_date).dt.days // 365
     
 
@@ -276,7 +276,22 @@ if 'master_df' in st.session_state:
 
     # Tabla de detalles
     with st.expander("🔍 Ver tabla detallada"):
+        if st.session_state["username"] == "admin" or st.session_state["username"] == "vgonzalezv":
+            output = BytesIO()
+            with pd.ExcelWriter(output, engine='openpyxl') as writer:
+                filtered_df.to_excel(writer, index=False, sheet_name='Egresados')
+            
+            excel_data = output.getvalue()
+
+            # 2. Crear el botón de descarga
+            st.download_button(
+                label="📥 Descargar tabla como Excel (.xlsx)",
+                data=excel_data,
+                file_name="reporte_egresados.xlsx",
+                mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+            )
         st.dataframe(filtered_df, width='stretch')
+        
 
     with tab2:
         if filtered_df.empty:
@@ -801,6 +816,6 @@ if 'master_df' in st.session_state:
                             text_auto=True, color='Canal',
                         )
                         fig_canales.update_layout(showlegend=False, xaxis_title="", yaxis_title="Cantidad de menciones", height=500, xaxis={'categoryorder':'total descending'})
-                        st.plotly_chart(fig_canales, use_container_width=True)
+                        st.plotly_chart(fig_canales, width="stretch")
                     else:
                         st.info("No hay datos registrados sobre canales de comunicación.")

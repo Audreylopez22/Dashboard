@@ -26,16 +26,21 @@ def main():
             config["cookie"]["key"],
             config["cookie"]["expiry_days"],
         )
-
-        authenticator.login("main")
+        custom_labels = {
+            'Form name': 'Inicio de sesión', # Spanish example
+            'Username': 'Usuario',
+            'Password': 'Contraseña',
+            'Login': 'Entrar'
+        }
+        authenticator.login("main", fields=custom_labels)
 
         if st.session_state["authentication_status"]:
-            st.write(f'Welcome *{st.session_state["name"]}*')
-            authenticator.logout("Logout", "main")
+            st.write(f'Bienvenido *{st.session_state["name"]}*')
+            authenticator.logout("Cerrar sesión", "main")
         elif st.session_state["authentication_status"] is False:
-            st.error("Username/password is incorrect")
+            st.error("Usuario o contraseña incorrectos")
         elif st.session_state["authentication_status"] is None:
-            st.warning("Please enter your username and password")
+            st.warning("Por favor para ingresar introduce tu usuario y contraseña")
     else:
         st.warning(
             "Your subscription is inactive. Please make the monthly payment to access the application."

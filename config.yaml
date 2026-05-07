@@ -9,6 +9,21 @@ credentials:
     admin:
       email: admin@gmail.com
       name: admin
+    vgonzalezv:
+      email: valentina@gmail.com
+      name: Valentina Gonzalez
+    egresados:
+      email: egresado@admon.uniajc.edu.co
+      name: egresados
+    intvitadoegresado:
+      email: invitadoegresado@gmail.com
+      name: Invitado Egresado
+    rectoria: 
+      email: rectoria@admon.uniajc.edu.co
+      name: Rectoria
+    vicerectoriacademica:
+      email: vicerectoriacademica@admon.uniajc.edu.co
+      name: vicerectoria academica
 cookie:
   name: conecta_unicamacho
   key:  conecta_unicamacho

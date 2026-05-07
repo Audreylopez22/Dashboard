@@ -160,7 +160,7 @@ if not df_companies.empty:
                 color='Sector'
             )
             fig_sector.update_layout(yaxis={'categoryorder':'total ascending'},showlegend=False, coloraxis_showscale=False, height=500)
-            st.plotly_chart(fig_sector, use_container_width=True)
+            st.plotly_chart(fig_sector, width="stretch")
 
         st.divider()
 
