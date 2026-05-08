@@ -366,7 +366,7 @@ if 'master_df' in st.session_state:
                     data = filtered_df['¿Piensa estudiar en 5 años?'].value_counts().reset_index()
                     n_count = filtered_df['¿Piensa estudiar en 5 años?'].count()
                     st.caption(f"Muestra: {n_count} registros analizados")
-                    fig = px.pie(data, names='¿Piensa estudiar en 5 años?', values='count', hole=0.5, color_discrete_sequence=px.colors.qualitative.Safe)
+                    fig = px.pie(data, names='¿Piensa estudiar en 5 años?', values='count', hole=0.5)
                     st.plotly_chart(fig, width='stretch')
 
             col3, col4 = st.columns(2)
@@ -470,7 +470,7 @@ if 'master_df' in st.session_state:
             if not df_interes.empty:
                 fig = px.bar(df_interes, x='Cantidad', y='Categoría', color='Interés',
                             barmode='group', orientation='h',
-                            color_discrete_map={'Sí': '#4ad0f2', 'No': '#bf51b2'},
+                            color_discrete_map={'Sí': '#0880c3', 'No': '#94358a'},
                             text_auto=True)
                 fig.update_layout(legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1))
                 st.plotly_chart(fig, width='stretch')
