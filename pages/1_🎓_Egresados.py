@@ -307,7 +307,7 @@ if 'master_df' in st.session_state:
             if year_col in filtered_df.columns and not filtered_df.empty:
                 #st.write("### Histórico de Graduaciones")
                 # Usamos original_df para mantener la línea de tiempo completa como referencia
-                timeline_data = original_df[year_col].value_counts().reset_index().sort_values(year_col)
+                timeline_data = filtered_df[year_col].value_counts().reset_index().sort_values(year_col)
                 timeline_data.columns = ['Año', 'Cantidad']
                 fig_timeline = px.line(timeline_data, x='Año', y='Cantidad', markers=True, text= 'Cantidad')
                 formalizar_grafico(fig_timeline, "Histórico de Graduaciones")
