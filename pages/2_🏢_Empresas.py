@@ -4,6 +4,7 @@ import pandas as pd
 import plotly.express as px
 import streamlit.components.v1 as components
 import plotly.io as pio
+from io import BytesIO
 
 if (
     "authentication_status" not in st.session_state
@@ -47,6 +48,62 @@ colors = [
 pio.templates.default = "plotly_white"
 
 st.set_page_config(page_title="Conecta Unicamacho", layout="wide")
+
+def formalizar_grafico(fig, titulo, n_valid=None, n_total=None):
+
+    for trace in fig.data:
+        trace_type = trace.type
+
+        if trace_type == "bar":
+            trace.textposition = "outside"
+
+        elif trace_type == "scatter":
+            trace.textposition = "top center"
+
+        elif trace_type == "pie":
+            trace.textposition = "inside"
+
+        if "textfont" in trace:
+            trace.textfont = dict(
+                color="black",
+                size=13
+            )
+
+        if "cliponaxis" in trace:
+            trace.cliponaxis = False
+
+    eje_style = dict(
+        title_font=dict(color="black", size=16),
+        tickfont=dict(color="black", size=12),
+        mirror=True,
+        automargin=True
+    )
+
+    fig.update_xaxes(**eje_style)
+    fig.update_yaxes(**eje_style)
+
+    layout_args = {
+        'title': {
+            'text': titulo,
+            'font': {'size': 24, 'color': 'black'}
+        },
+        'margin': dict(t=90),
+        'bargap': 0.1,
+        'plot_bgcolor': 'rgba(0,0,0,0)',
+        'paper_bgcolor': 'white',
+        'uniformtext_minsize': 10,
+        'uniformtext_mode': 'hide'
+    }
+
+    if n_valid is not None and n_total is not None:
+        layout_args['title']['subtitle'] = {
+            'text': f"Muestra: {n_valid} de {n_total} registros analizados",
+            'font': {'color': "#000000"}
+        }
+
+    fig.update_layout(**layout_args)
+
+    return fig
 
 #@st.cache_data
 def fetch_quintadb_data_companies():
@@ -139,7 +196,7 @@ if not df_companies.empty:
     # --- PESTAÑA: PERFIL CORPORATIVO ---
     with tab_general:
         # Gráfico 1: Sector Económico
-        st.markdown("#### Composición por Sector Económico")
+        #st.markdown("#### Composición por Sector Económico")
         sector_column = 'Actividad económica'
         if sector_column in df_companies.columns:
             # Calculamos N para este gráfico (datos no nulos)
@@ -149,7 +206,7 @@ if not df_companies.empty:
             ]
             n_total = df_companies.shape[0]
             n_sector = len(df_filtered)
-            st.caption(f"Muestra: {n_sector} de {n_total} registros analizados")
+            #st.caption(f"Muestra: {n_sector} de {n_total} registros analizados")
             
             sector_counts = df_filtered[sector_column].fillna('No reporta').value_counts().head(12).reset_index()
             sector_counts.columns = ['Sector', 'Cantidad']
@@ -160,19 +217,20 @@ if not df_companies.empty:
                 color='Sector'
             )
             fig_sector.update_layout(yaxis={'categoryorder':'total ascending'},showlegend=False, coloraxis_showscale=False, height=500)
+            formalizar_grafico(fig_sector, "Composición por Sector Económico", n_sector, n_total)
             st.plotly_chart(fig_sector, width="stretch")
 
         st.divider()
 
         # Gráfico 2: Tamaño de Empresa
-        st.markdown("#### Distribución por Tamaño de Empresa")
+        #st.markdown("#### Distribución por Tamaño de Empresa")
         size_column = 'Tamaño de la empresa'
         if size_column in df_companies.columns:
             # Filtramos nulos y contamos N
             clean_size_df = df_companies[df_companies[size_column].notna() & (df_companies[size_column] != "")].copy()
             n_size = len(clean_size_df)
             n_total = df_companies.shape[0]
-            st.caption(f"Muestra: {n_size} de {n_total} empresas.")
+            #st.caption(f"Muestra: {n_size} de {n_total} empresas.")
             
             size_summary = clean_size_df[size_column].value_counts().reset_index()
             size_summary.columns = ['Tamaño', 'Total']
@@ -182,6 +240,7 @@ if not df_companies.empty:
                 hole=0.5, color = 'Tamaño'
             )
             fig_size.update_layout(height=500)
+            formalizar_grafico(fig_size, "Distribución por Tamaño de Empresa", n_size, n_total)
             st.plotly_chart(fig_size, use_container_width=True)
             
             st.divider()
@@ -239,7 +298,7 @@ if not df_companies.empty:
     # --- PESTAÑA: FIDELIZACIÓN ---
     with tab_loyalty:
         # Gráfico 3: Desempeño
-        st.markdown("#### Calificación del Desempeño")
+        #st.markdown("#### Calificación del Desempeño")
         performance_column = '¿Cómo califica el desempeño de los practicantes o egresados de Unicamacho?'
         if performance_column in df_companies.columns:
             exclude_list = ['N/A', 'Otro', 'Otros', 'No reporta', 'Sin información']
@@ -248,7 +307,7 @@ if not df_companies.empty:
             ~df_companies[performance_column].isin(exclude_list)].copy()
             n_perf = len(clean_perf)
             n_total = df_companies.shape[0]
-            st.caption(f"Muestra: {n_perf} de {n_total} evaluaciones de empresas")
+            #st.caption(f"Muestra: {n_perf} de {n_total} evaluaciones de empresas")
             
             performance_data = clean_perf[performance_column].value_counts().reset_index()
             performance_data.columns = ['Calificación', 'Cantidad']
@@ -259,12 +318,13 @@ if not df_companies.empty:
                 color='Calificación'
             )
             fig_performance.update_layout(showlegend=False, coloraxis_showscale=False,yaxis={'categoryorder':'total ascending'}, yaxis_title="", height=400)
+            formalizar_grafico(fig_performance, "Calificación del Desempeño", n_perf, n_total)
             st.plotly_chart(fig_performance, use_container_width=True)
 
         st.divider()
 
         # Gráfico 4: Convenios
-        st.markdown("#### Modalidades de Convenio Existentes")
+        #st.markdown("#### Modalidades de Convenio Existentes")
         agreement_column = '¿Qué modalidad de convenio ha tenido con Unicamacho?'
         if agreement_column in df_companies.columns:
             exclude_list = ['N/A', 'Otro', 'Otros', 'No reporta', 'Sin información']
@@ -274,7 +334,7 @@ if not df_companies.empty:
             ]
             n_agree = len(df_filtered)
             n_total = df_companies.shape[0]
-            st.caption(f"Muestra: {n_agree} de {n_total} empresas. ")
+            #st.caption(f"Muestra: {n_agree} de {n_total} empresas. ")
             
             agreement_data = df_filtered[agreement_column].value_counts().reset_index()
             agreement_data.columns = ['Modalidad', 'Cantidad']
@@ -294,12 +354,13 @@ if not df_companies.empty:
                 height=500,
                 margin=dict(l=0, r=50, t=30, b=0)   # Ajuste de márgenes
             )
+            formalizar_grafico(fig_agreement, "Modalidades de Convenio Existentes", n_agree, n_total)
             st.plotly_chart(fig_agreement, use_container_width=True)
 
     # --- PESTAÑA: OPORTUNIDADES ---
     with tab_opportunities:
         # Gráfico 5: Áreas de Interés
-        st.markdown("#### Áreas de Interés para Colaboración")
+        #st.markdown("#### Áreas de Interés para Colaboración")
         interest_column = '¿En qué áreas estaría interesado en colaborar con Unicamacho?'
         if interest_column in df_companies.columns:
             # En este caso N es el número de empresas que respondieron, aunque marquen varias áreas
@@ -310,7 +371,7 @@ if not df_companies.empty:
             ]
             n_interest = len(df_filtered)
             n_total = df_companies.shape[0]
-            st.caption(f"Muestra: {n_interest} de {n_total} empresas.")
+            #st.caption(f"Muestra: {n_interest} de {n_total} empresas.")
             
             interests_list = df_filtered[interest_column].str.split(',').explode().str.strip()
             interests_summary = interests_list.value_counts().head(15).reset_index()
@@ -322,13 +383,30 @@ if not df_companies.empty:
                 color='Área'
             )
             fig_interests.update_layout(coloraxis_showscale=False, yaxis={'categoryorder':'total ascending'},showlegend=False,  height=600)
+            formalizar_grafico(fig_interests, "Áreas de Interés para Colaboración", n_interest, n_total)
             st.plotly_chart(fig_interests, use_container_width=True)
 
     # 3. SECCIÓN DE DATOS CRUDOS
     st.divider()
     with st.expander("🔍 Directorio y Tabla Detallada"):
-        display_columns = [c for c in ['Nombre', 'Actividad económica', 'Tamaño de la empresa', 'Ubicación', 'Sitio web'] if c in df_companies.columns]
-        st.dataframe(df_companies[display_columns], use_container_width=True)
+
+        authorized_users = ["admin", "vgonzalezv"]
+        
+        if st.session_state.get("username") in authorized_users:
+            output = BytesIO()
+            with pd.ExcelWriter(output, engine='openpyxl') as writer:
+                df_companies.to_excel(writer, index=False, sheet_name='Directorio')
+            
+            excel_data = output.getvalue()
+
+            st.download_button(
+                label="📥 Descargar tabla en Excel",
+                data=excel_data,
+                file_name="directorio_empresas.xlsx",
+                mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+            )
+        
+        st.dataframe(df_companies, use_container_width=True)
 
 else:
     st.info("No se encontraron registros de empresas para mostrar.")

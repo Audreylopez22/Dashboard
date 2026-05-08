@@ -46,6 +46,62 @@ colors = [
 pio.templates.default = "plotly_white"
 pio.templates[pio.templates.default].layout.colorway = colors
 
+def formalizar_grafico(fig, titulo, n_valid=None, n_total=None):
+
+    for trace in fig.data:
+        trace_type = trace.type
+
+        if trace_type == "bar":
+            trace.textposition = "outside"
+
+        elif trace_type == "scatter":
+            trace.textposition = "top center"
+
+        elif trace_type == "pie":
+            trace.textposition = "inside"
+
+        if "textfont" in trace:
+            trace.textfont = dict(
+                color="black",
+                size=13
+            )
+
+        if "cliponaxis" in trace:
+            trace.cliponaxis = False
+
+    eje_style = dict(
+        title_font=dict(color="black", size=16),
+        tickfont=dict(color="black", size=12),
+        mirror=True,
+        automargin=True
+    )
+
+    fig.update_xaxes(**eje_style)
+    fig.update_yaxes(**eje_style)
+
+    layout_args = {
+        'title': {
+            'text': titulo,
+            'font': {'size': 24, 'color': 'black'}
+        },
+        'margin': dict(t=90),
+        'bargap': 0.1,
+        'plot_bgcolor': 'rgba(0,0,0,0)',
+        'paper_bgcolor': 'white',
+        'uniformtext_minsize': 10,
+        'uniformtext_mode': 'hide'
+    }
+
+    if n_valid is not None and n_total is not None:
+        layout_args['title']['subtitle'] = {
+            'text': f"Muestra: {n_valid} de {n_total} registros analizados",
+            'font': {'color': "#000000"}
+        }
+
+    fig.update_layout(**layout_args)
+
+    return fig
+
 #@st.cache_data
 def fetch_quintadb_data():
     """Obtiene todos los registros de QuintaDB con paginación optimizada."""
@@ -199,27 +255,27 @@ if 'master_df' in st.session_state:
 
         with col1:
             if 'Género' in filtered_df.columns and not filtered_df.empty:
-                st.write("### Distribución por Género")
+                #st.write("### Distribución por Género")
                 gender_data = filtered_df['Género'].value_counts().reset_index()
                 gender_data.columns = ['Género', 'Cantidad']
                 fig_gender = px.bar(
                 gender_data, x='Género', y='Cantidad', color='Género',
                 text_auto=True, color_discrete_sequence=colors
-            )
+                )
+                formalizar_grafico(fig_gender, "Distribución por Género")
             fig_gender.update_layout(showlegend=False)
             st.plotly_chart(fig_gender, width='stretch',theme="streamlit" )
 
         with col2:
             if 'Estrato social' in filtered_df.columns:
-                st.write("### Estrato Social")
+                #st.write("### Estrato Social")
                 exclude_list = ['N/A', 'Otro', 'Otros', 'No reporta', 'Sin información', 'nan', 'None']
                 df_plot = filtered_df[~filtered_df['Estrato social'].astype(str).isin(exclude_list)].copy()
                 n_total = filtered_df.shape[0]
                 n_valid = len(df_plot)
-                st.caption(f"Muestra: {n_valid} de {n_total} registros analizados.")
+                #st.caption(f"Muestra: {n_valid} de {n_total} registros analizados.")
                 estrato_data = df_plot['Estrato social'].value_counts().reset_index()
                 estrato_data.columns = ['Estrato', 'Cantidad']
-
                 fig = px.bar(estrato_data, x='Estrato', y='Cantidad', text_auto=True, color = 'Estrato')
                 fig.update_layout(
                     showlegend=False, 
@@ -227,33 +283,37 @@ if 'master_df' in st.session_state:
                     xaxis_title="Estrato",
                     xaxis={'categoryorder':'category ascending'}
                 )
+                formalizar_grafico(fig, "Distribución por Estrato Social", n_valid, n_total)
                 st.plotly_chart(fig, width='stretch')
     
         chart_col1, chart_col2 = st.columns(2)
 
         with chart_col1:
             if 'Edad' in filtered_df.columns and not filtered_df.empty:
-                st.write("### Distribución por Edad")
+                #st.write("### Distribución por Edad")
                 fig_edad = px.histogram(
                     filtered_df, 
                     x='Edad', 
                     nbins=20, 
                     labels={'Edad': 'Años', 'count': 'Frecuencia'},
-                    color_discrete_sequence=colors
+                    color_discrete_sequence=colors,
+                    text_auto=True
                 )
-                fig_edad.update_layout(yaxis_title="Cantidad de Egresados", bargap=0.1)
+                fig_edad.update_layout( bargap=0.1, yaxis_title="Cantidad")
+                formalizar_grafico(fig_edad, "Distribución por Edad")
                 st.plotly_chart(fig_edad, width='stretch')
 
         with chart_col2:
             if year_col in filtered_df.columns and not filtered_df.empty:
-                st.write("### Histórico de Graduaciones")
+                #st.write("### Histórico de Graduaciones")
                 # Usamos original_df para mantener la línea de tiempo completa como referencia
                 timeline_data = original_df[year_col].value_counts().reset_index().sort_values(year_col)
                 timeline_data.columns = ['Año', 'Cantidad']
-                fig_timeline = px.line(timeline_data, x='Año', y='Cantidad', markers=True)
+                fig_timeline = px.line(timeline_data, x='Año', y='Cantidad', markers=True, text= 'Cantidad')
+                formalizar_grafico(fig_timeline, "Histórico de Graduaciones")
                 st.plotly_chart(fig_timeline, width='stretch')    
         
-        st.write("### Distribución Institucional por Unidad Académica")
+        #st.write("### Distribución Institucional por Unidad Académica")
         unit_col = 'Unidad Academica' 
         
         if unit_col in filtered_df.columns and not filtered_df.empty:
@@ -270,9 +330,54 @@ if 'master_df' in st.session_state:
             )
             # Al estar fuera del bloque 'with', ocupará todo el ancho disponible
             fig_unit.update_layout(xaxis_title="Unidad Académica", showlegend=False)
+            formalizar_grafico(fig_unit, "Distribución Institucional por Unidad Académica")
             st.plotly_chart(fig_unit, width='stretch')
         else:
             st.info("No hay datos disponibles para Unidades Académicas.")
+        
+        st.write("### Distribución Geográfica por País de Residencia")
+        country_col = 'País de residencia' 
+
+        traducciones = {
+            "Colombia": "Colombia",
+            "España": "Spain",
+            "Estados Unidos": "United States",
+            "Luxemburgo": "Luxembourg",
+            "Chile": "Chile",
+            "Nicargua": "Nicaragua",
+            "Nicaragua": "Nicaragua",
+            "Puerto Rico": "Puerto Rico",
+            "Nueva Zelanda": "New Zealand",
+            "Perú": "Peru"
+        }
+
+        if country_col in filtered_df.columns and not filtered_df.empty:
+            filtered_df[country_col] = filtered_df[country_col].str.strip()
+            country_data = filtered_df[country_col].replace(traducciones).value_counts().reset_index()
+            country_data.columns = [country_col, 'Cantidad']
+            
+            fig_map = px.choropleth(
+                country_data,
+                locations=country_col,        # Columna con los nombres de los países
+                locationmode='country names', # Indica que usamos nombres (no códigos ISO)
+                color='Cantidad',             # Intensidad del color según la cantidad
+                hover_name=country_col,       # Info al pasar el mouse
+                color_continuous_scale=colors, # Puedes usar tu variable 'colors' si es una escala
+                labels={'Cantidad': 'Total'}
+            )
+            
+            # 3. Ajustar el diseño para que se vea limpio
+            fig_map.update_layout(
+                geo=dict(
+                    showframe=False,
+                    showcoastlines=True,
+                    projection_type='equirectangular'
+                ),
+                margin={"r":0,"t":40,"l":0,"b":0}
+            )
+            st.plotly_chart(fig_map, use_container_width=True)
+        else:
+            st.info("No hay datos disponibles para la distribución geográfica.")
 
     # Tabla de detalles
     with st.expander("🔍 Ver tabla detallada"):
@@ -301,7 +406,7 @@ if 'master_df' in st.session_state:
             col_ac1, col_ac2 = st.columns(2)
 
             with col_ac1:
-                st.markdown("#### ¿Continuó con sus estudios?")
+                #st.markdown("#### ¿Continuó con sus estudios?")
                 cont_col = '¿Continuó con sus estudios?'
                 if cont_col in filtered_df.columns:
                     # Limpieza rápida
@@ -309,16 +414,17 @@ if 'master_df' in st.session_state:
                     df_cont = cont_data.value_counts().reset_index()
                     df_cont.columns = ['Estado', 'Cantidad']
                     n_sector = len(cont_data)
-                    st.caption(f"Muestra: {n_sector} registros analizados")
+                    #st.caption(f"Muestra: {n_sector} registros analizados")
                     
                     fig_cont = px.pie(
                         df_cont, names='Estado', values='Cantidad', 
                         hole=0.4,
                     )
+                    formalizar_grafico(fig_cont, "¿Continuó con sus estudios?",n_sector, n_total)
                     st.plotly_chart(fig_cont, width='stretch')
 
             with col_ac2:
-                st.markdown("#### Nivel Académico Alcanzado")
+                #st.markdown("#### Nivel Académico Alcanzado")
                 # Vamos a consolidar las columnas de "Tiene..."
                 niveles = {
                     'Especialización': filtered_df['¿Tiene especialización?'].str.upper().str.strip().isin(['SÍ', 'SI']).sum(),
@@ -329,7 +435,7 @@ if 'master_df' in st.session_state:
                 df_niveles = pd.DataFrame(list(niveles.items()), columns=['Nivel', 'Cantidad'])
                 n_total = filtered_df.shape[0]
                 n_sector = df_niveles['Cantidad'].sum()
-                st.caption(f"Muestra: {n_sector} de {n_total} registros analizados")
+                #st.caption(f"Muestra: {n_sector} de {n_total} registros analizados")
                 
                 fig_niv = px.bar(
                     df_niveles, x='Nivel', y='Cantidad', 
@@ -342,54 +448,59 @@ if 'master_df' in st.session_state:
                     xaxis_title="",
                     yaxis_title="Cantidad"
                 )
+                formalizar_grafico(fig_niv, "Nivel Académico Alcanzado", n_sector, n_total)
                 st.plotly_chart(fig_niv, width='stretch')
 
             col1, col2 = st.columns(2)
             
             with col1:
-                st.markdown("#### ¿Quiere participar en un semillero?")
+                #st.markdown("#### ¿Quiere participar en un semillero?")
                 if '¿Quiere participar en un semillero?' in filtered_df.columns:
                     data = filtered_df['¿Quiere participar en un semillero?'].value_counts().reset_index()
                     n_sem = filtered_df['¿Quiere participar en un semillero?'].count()
-                    st.caption(f"Muestra: {n_sem} registros analizados")
+                    #st.caption(f"Muestra: {n_sem} registros analizados")
                     fig = px.pie(
                         data,
                         names='¿Quiere participar en un semillero?',  # Corrected: use the column with categories
                         values='count',  # Corrected: use the 'count' column for values
                         hole=0.5,
                     )
+                    formalizar_grafico(fig, "¿Quiere participar en un semillero?", n_sem, n_total)
                     st.plotly_chart(fig, width='stretch')
 
             with col2:
-                st.markdown("#### ¿Piensa estudiar en 5 años?")
+                #st.markdown("#### ¿Piensa estudiar en 5 años?")
                 if '¿Piensa estudiar en 5 años?' in filtered_df.columns:
                     data = filtered_df['¿Piensa estudiar en 5 años?'].value_counts().reset_index()
                     n_count = filtered_df['¿Piensa estudiar en 5 años?'].count()
-                    st.caption(f"Muestra: {n_count} registros analizados")
+                    #st.caption(f"Muestra: {n_count} registros analizados")
                     fig = px.pie(data, names='¿Piensa estudiar en 5 años?', values='count', hole=0.5)
+                    formalizar_grafico(fig, "¿Piensa estudiar en 5 años?", n_count, n_total)
                     st.plotly_chart(fig, width='stretch')
 
             col3, col4 = st.columns(2)
             with col3:
-                st.markdown("#### ¿Haría un posgrado en UNICAMACHO?")
+                #st.markdown("#### ¿Haría un posgrado en UNICAMACHO?")
                 # Insight Senior: Este es el KPI de "Retención de Cliente" o Lealtad de marca.
                 if '¿Haría un posgrado en UNICAMACHO?' in filtered_df.columns:
                     data = filtered_df['¿Haría un posgrado en UNICAMACHO?'].value_counts().reset_index()
                     n_count = filtered_df['¿Haría un posgrado en UNICAMACHO?'].count()
-                    st.caption(f"Muestra: {n_count} registros analizados")
+                    #st.caption(f"Muestra: {n_count} registros analizados")
                     fig = px.pie(data, names='¿Haría un posgrado en UNICAMACHO?', values='count', hole=0.5,
                                 color = '¿Haría un posgrado en UNICAMACHO?')
+                    formalizar_grafico(fig, "¿Haría un posgrado en UNICAMACHO?", n_count, n_total)
                     st.plotly_chart(fig, width='stretch')
             
             with col4:
-                st.markdown("#### Forma de estudio ")
+                #st.markdown("#### Forma de estudio ")
                 # Insight Senior: Este es el KPI de "Retención de Cliente" o Lealtad de marca.
                 if 'Forma de estudio' in filtered_df.columns:
                     data = filtered_df['Forma de estudio'].value_counts().reset_index()
                     n_count = filtered_df['Forma de estudio'].count()
-                    st.caption(f"Muestra: {n_count} registros analizados")
+                    #st.caption(f"Muestra: {n_count} registros analizados")
                     fig = px.pie(data, names='Forma de estudio', values='count', hole=0.5,
                                 color = 'Forma de estudio')
+                    formalizar_grafico(fig, "Forma de estudio", n_count, n_total)
                     st.plotly_chart(fig, width='stretch')
 
             st.divider()
@@ -398,7 +509,7 @@ if 'master_df' in st.session_state:
             col5, col6 = st.columns(2)
 
             with col5:
-                st.markdown("#### ¿Cuántos estudios ha realizado?")
+                #st.markdown("#### ¿Cuántos estudios ha realizado?")
                 if '¿Cuántos estudios ha realizado?' in filtered_df.columns:
                     exclude_list = ['N/A','N/A ', 'Otro', 'Otros', 'No reporta', 'Sin información', 'nan', 'None']
                     df_validos = filtered_df[
@@ -408,7 +519,7 @@ if 'master_df' in st.session_state:
 
                     n_total = filtered_df.shape[0]
                     n_count = len(df_validos)
-                    st.caption(f"Muestra: {n_count} de {n_total} registros analizados")
+                    #st.caption(f"Muestra: {n_count} de {n_total} registros analizados")
                     # Senior Data Tip: Forzamos a que el eje X sea discreto (1, 2, 3...)
                     fig = px.histogram(
                         df_validos, 
@@ -417,14 +528,15 @@ if 'master_df' in st.session_state:
                         text_auto=True,
                         color = '¿Cuántos estudios ha realizado?',)
                     fig.update_layout(showlegend=False,bargap=0.2, xaxis_title="Cantidad de estudios extras", yaxis_title="Cantidad")
+                    formalizar_grafico(fig, "¿Cuántos estudios ha realizado?", n_count, n_total)
                     st.plotly_chart(fig, width='stretch')
 
             with col6:
-                st.markdown("#### ¿Tiene certificaciones de idiomas?")
+                #st.markdown("#### ¿Tiene certificaciones de idiomas?")
                 if '¿Tiene certificaciones de idiomas?' in filtered_df.columns:
                     data = filtered_df['¿Tiene certificaciones de idiomas?'].value_counts().reset_index()
                     n_total = filtered_df.shape[0]
-                    st.caption(f"Muestra: {n_total} registros analizados")
+                    #st.caption(f"Muestra: {n_total} registros analizados")
                     fig = px.bar(
                         data, 
                         x='¿Tiene certificaciones de idiomas?', 
@@ -438,13 +550,14 @@ if 'master_df' in st.session_state:
                         yaxis_title="Cantidad",
                         xaxis={'type': 'category'} # Esto evita que la barra se "estire"
                     )
-                    fig.update_traces(width=0.5)            
+                    fig.update_traces(width=0.5)    
+                    formalizar_grafico(fig, "¿Tiene certificaciones de idiomas?", n_count, n_total)        
                     st.plotly_chart(fig, width='stretch')
 
             st.divider()
 
             # --- FILA 3: INTERÉS EN EDUCACIÓN FUTURA (COMPUESTO) ---
-            st.markdown("#### Demanda Potencial por Tipo de Formación")
+            #st.markdown("#### Demanda Potencial por Tipo de Formación")
             
             # Ingeniería de Datos: Transformamos múltiples columnas en un DF largo para Plotly
             intereses = {
@@ -473,6 +586,7 @@ if 'master_df' in st.session_state:
                             color_discrete_map={'Sí': '#0880c3', 'No': '#94358a'},
                             text_auto=True)
                 fig.update_layout(legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1))
+                formalizar_grafico(fig, "Demanda Potencial por Tipo de Formación")
                 st.plotly_chart(fig, width='stretch')
             st.divider()
 
@@ -485,23 +599,24 @@ if 'master_df' in st.session_state:
                 col_main1, col_main2 = st.columns(2) # El boxplot necesita más espacio
 
                 with col_main1:
-                    st.markdown("#### ¿Trabaja actualmente?")
+                    #st.markdown("#### ¿Trabaja actualmente?")
                     # Gráfico de Dona (más moderno que el Pie simple)
                     n_count = filtered_df['¿Trabaja actualmente?'].count()
-                    st.caption(f"Muestra: {n_count} registros analizados")
+                    #st.caption(f"Muestra: {n_count} registros analizados")
                     fig_job = px.pie(
                         filtered_df, names='¿Trabaja actualmente?', 
                         hole=0.4,
                         color = '¿Trabaja actualmente?'
                     )
                     fig_job.update_layout(showlegend=True, legend=dict(orientation="h", yanchor="bottom", y=-0.2))
+                    formalizar_grafico(fig_job, "¿Trabaja actualmente?", n_count, n_total) 
                     st.plotly_chart(fig_job, width='stretch')
 
 
                 with col_main2:
                     col_name = 'Ingreso mensual aproximado ' 
                     if col_name in filtered_df.columns:
-                        st.write("### Distribución de Ingresos (Mensual)")
+                        #st.write("### Distribución de Ingresos (Mensual)")
                         exclude_list = ['N/A', 'Otro', 'Otros', 'No reporta', 'Sin información']
                         df_plot = filtered_df[
                             (~filtered_df[col_name].astype(str).isin(exclude_list)) & 
@@ -510,13 +625,14 @@ if 'master_df' in st.session_state:
                         
                         n_total = len(filtered_df)
                         n_count = len(df_plot)
-                        st.caption(f"Muestra: {n_count} de {n_total} registros analizados")
+                        #st.caption(f"Muestra: {n_count} de {n_total} registros analizados")
 
                         salary_data = df_plot[col_name].value_counts().reset_index()
                         salary_data.columns = ['Ingreso', 'Cantidad']
 
                         fig = px.bar(salary_data, x='Ingreso', y='Cantidad', text_auto=True , color= 'Ingreso')
                         fig.update_layout(showlegend=False)
+                        formalizar_grafico(fig, " Distribución de Ingresos (Mensual)", n_count, n_total) 
                         st.plotly_chart(fig, width='stretch')
 
                 # --- FILA 3: Inserción y Experiencia ---
@@ -524,7 +640,7 @@ if 'master_df' in st.session_state:
                 col_ins1, col_ins2 = st.columns(2)
 
                 with col_ins1:
-                    st.markdown("#### ¿Cuánto tardó en encontrar un empleo después de graduarse?")
+                    #st.markdown("#### ¿Cuánto tardó en encontrar un empleo después de graduarse?")
                     col_name = '¿Cuánto tardó en encontrar un empleo después de graduarse?'
                     if col_name in filtered_df.columns and not filtered_df.empty:
                         exclude_list = ['N/A', 'Otro', 'Otros', 'No reporta', 'Sin información']
@@ -535,7 +651,7 @@ if 'master_df' in st.session_state:
                         
                         n_total = len(filtered_df)
                         n_count = len(df_plot)
-                        st.caption(f"Muestra: {n_count} de {n_total} registros analizados")
+                        #st.caption(f"Muestra: {n_count} de {n_total} registros analizados")
                         
                         fig_time = px.histogram(
                             df_plot, 
@@ -547,12 +663,13 @@ if 'master_df' in st.session_state:
                         fig_time.update_layout(
                             showlegend=False,
                             xaxis={'categoryorder':'total descending'},
+                            yaxis_title="Cantidad"
                         )
-                        
+                        formalizar_grafico(fig_time, "¿Cuánto tardó en encontrar un empleo?", n_count, n_total) 
                         st.plotly_chart(fig_time, width='stretch')
 
                 with col_ins2:
-                    st.markdown("#### Años de Experiencia Laboral")
+                    #st.markdown("#### Años de Experiencia Laboral")
                     col_name = '¿Cuántos años de experiencia laboral tiene?'
                     if col_name in filtered_df.columns:
                         exclude_list = ['N/A', 'Otro', 'Otros', 'No reporta', 'Sin información']
@@ -563,7 +680,7 @@ if 'master_df' in st.session_state:
                         
                         n_total = len(filtered_df)
                         n_count = len(df_plot)
-                        st.caption(f"Muestra: {n_count} de {n_total} registros analizados")
+                        #st.caption(f"Muestra: {n_count} de {n_total} registros analizados")
                         fig_exp = px.histogram(
                             df_plot, x=col_name,
                             nbins=15,
@@ -574,6 +691,7 @@ if 'master_df' in st.session_state:
                             showlegend=False,
                             xaxis={'categoryorder':'total descending'}, 
                         )
+                        formalizar_grafico(fig_exp, "Años de Experiencia Laboral", n_count, n_total)
                         st.plotly_chart(fig_exp, width='stretch')
 
                 # --- FILA 4: Detalles de la Empresa y Cargo ---
@@ -582,30 +700,32 @@ if 'master_df' in st.session_state:
 
                 with col_det1:
                     if '¿Tiene tarjeta profesional? ' in filtered_df.columns:
-                        st.write("### ¿Tiene tarjeta profesional?")
+                        #st.write("### ¿Tiene tarjeta profesional?")
                         profesional_card_col = '¿Tiene tarjeta profesional? '
                         filtered_df[profesional_card_col] = filtered_df[profesional_card_col].astype(str)
                         n_total = len(filtered_df)
-                        st.caption(f"Muestra: {n_total} registros analizados")
+                        #st.caption(f"Muestra: {n_total} registros analizados")
 
                         salary_data = filtered_df[profesional_card_col].value_counts().reset_index()
                         salary_data.columns = ['Tarjeta profesional', 'Cantidad']
 
                         fig = px.bar(salary_data, x='Tarjeta profesional', y='Cantidad', text_auto=True, color='Tarjeta profesional')
                         fig.update_layout(showlegend=False)
+                        formalizar_grafico(fig, "¿Tiene tarjeta profesional?", n_count, n_total)
                         st.plotly_chart(fig, width='stretch')
 
                 with col_det2:
-                    st.markdown("#### ¿Ha ascendido o cambiado de cargo?")
+                    #st.markdown("#### ¿Ha ascendido o cambiado de cargo?")
                     ascenso_data = filtered_df['¿Ha ascendido o cambiado de cargo?'].value_counts()
                     n_total = len(filtered_df)
-                    st.caption(f"Muestra: {n_total} registros analizados")
+                    #st.caption(f"Muestra: {n_total} registros analizados")
                     
                     fig_asc = px.pie(
                         names=ascenso_data.index, 
                         values=ascenso_data.values, 
                         hole=0.5,
                     )
+                    formalizar_grafico(fig_asc, "¿Ha ascendido o cambiado de cargo?", n_count, n_total)
                     st.plotly_chart(fig_asc, width='stretch')
 
                 # --- FILA 5: El Insight Maestro (Relación Estudio vs Empleo) ---
@@ -613,10 +733,10 @@ if 'master_df' in st.session_state:
                 st.markdown("### 📈 Análisis de Formalidad Laboral")
 
                 # --- GRÁFICO 1: EL UNIVERSO TOTAL ---
-                col_uni1, col_uni2 = st.columns([1, 1.5])
+                col_uni1, col_uni2 = st.columns([1, 1])
 
                 with col_uni1:
-                    st.markdown("#### ¿Cotiza en el sistema de seguridad de Colombia?")
+                    #st.markdown("#### ¿Cotiza en el sistema de seguridad de Colombia?")
                     # Normalización y conteo
                     if '¿Cotiza en el sistema de seguridad de Colombia?' in filtered_df.columns:
                         # Limpiamos los datos para asegurar que 'Sí' y 'Si' sean lo mismo
@@ -631,11 +751,12 @@ if 'master_df' in st.session_state:
                             hole=0.5,
                             color='Estado',
                         )
+                        formalizar_grafico(fig_pie_cotiza, "¿Cotiza en el sistema de seguridad?", n_count, n_total)
                         st.plotly_chart(fig_pie_cotiza, width='stretch')
 
                 # --- GRÁFICO 2: DESGLOSE DE BENEFICIOS (Solo para los que SÍ cotizan) ---
                 with col_uni2:
-                    st.markdown("#### Beneficios de quienes sí cotizan")
+                    #st.markdown("#### Beneficios de quienes sí cotizan")
                     
                     # Filtramos el dataframe: Solo personas que marcaron "SÍ" en cotización
                     mask_cotizantes = filtered_df['¿Cotiza en el sistema de seguridad de Colombia?'].fillna('').str.upper().str.strip().isin(['SÍ', 'SI'])
@@ -663,6 +784,7 @@ if 'master_df' in st.session_state:
                         )
                         
                         fig_ben.update_layout(showlegend=False, yaxis_title="Número de personas")
+                        formalizar_grafico(fig_ben, "Beneficios de quienes sí cotizan", n_count, n_total)
                         st.plotly_chart(fig_ben, width='stretch')
                     else:
                         st.info("No hay datos de beneficios para mostrar (nadie cotiza en este filtro).")
@@ -676,11 +798,11 @@ if 'master_df' in st.session_state:
             col1, col2 = st.columns(2)
 
             with col1:
-                st.markdown("#### ¿Ha creado empresa?")
+                #st.markdown("#### ¿Ha creado empresa?")
                 if '¿Ha creado empresa o emprendimiento?' in filtered_df.columns:
                     data_pie = filtered_df['¿Ha creado empresa o emprendimiento?'].value_counts().reset_index()
                     n_count = filtered_df[col_name].count()
-                    st.caption(f"Muestra: {n_total} registros analizados.")
+                    #st.caption(f"Muestra: {n_total} registros analizados.")
                     fig_pie = px.pie(
                         data_pie, 
                         values='count', 
@@ -688,16 +810,17 @@ if 'master_df' in st.session_state:
                         hole=0.4, # Estilo Donut (más moderno UI)
                     )
                     fig_pie.update_layout(margin=dict(l=20, r=20, t=20, b=20))
+                    formalizar_grafico(fig_pie, "¿Ha creado empresa?", n_count, n_total)
                     st.plotly_chart(fig_pie, width='stretch')
 
             with col2:
-                st.markdown("#### Etapa del emprendimiento")
+                #st.markdown("#### Etapa del emprendimiento")
                 col_name = '¿En qué etapa se encuentra la empresa o emprendimiento?'
                 if col_name in filtered_df.columns:
                     exclude_list = ['N/A', 'Otro', 'Otros', 'No reporta', 'Sin información']
                     df_plot = filtered_df[~filtered_df[col_name].astype(str).isin(exclude_list)].copy()
                     n_valid = len(df_plot)
-                    st.caption(f"Muestra: {n_valid} de {n_total} registros reportados")
+                    #st.caption(f"Muestra: {n_valid} de {n_total} registros reportados")
                     data_etapa = df_plot[col_name].value_counts().reset_index()
                     fig_etapa = px.bar(
                         data_etapa,
@@ -707,20 +830,21 @@ if 'master_df' in st.session_state:
                         color=col_name,
                     )
                     fig_etapa.update_layout(showlegend=False, xaxis_title="", yaxis_title="Cantidad", xaxis={'categoryorder':'total descending'})
+                    formalizar_grafico(fig_etapa, "¿En qué etapa se encuentra la empresa o emprendimiento?", n_valid, n_total)
                     st.plotly_chart(fig_etapa, width='stretch')
 
             # --- FILA 2: Actividad y Empleo ---
             col3, col4 = st.columns(2)
 
             with col3:
-                st.markdown("#### Apoyo recibido")
+                #st.markdown("#### Apoyo recibido")
                 col_name = '¿Recibió algún tipo de apoyo (formación y/o finanzas) para emprender?'
                 if col_name in filtered_df.columns:
                     exclude_list = ['N/A', 'Otro', 'Otros', 'No reporta', 'Sin información']
                     df_plot = filtered_df[~filtered_df[col_name].astype(str).isin(exclude_list)].copy()
                     data_apoyo = df_plot[col_name].value_counts().reset_index()
                     n_valid = len(df_plot)
-                    st.caption(f"Muestra: {n_valid} de {n_total} registros analizados.")
+                    #st.caption(f"Muestra: {n_valid} de {n_total} registros analizados.")
                     fig_apoyo = px.bar(
                         data_apoyo,
                         x=col_name,
@@ -728,16 +852,17 @@ if 'master_df' in st.session_state:
                         color=col_name,
                     )
                     fig_apoyo.update_layout(showlegend=False, xaxis_title="", yaxis_title="Cantidad")
+                    formalizar_grafico(fig_apoyo, "Apoyo recibido", n_valid, n_total)
                     st.plotly_chart(fig_apoyo, width='stretch')
 
             with col4:
-                st.markdown("#### Generación de empleos")
+                ##zst.markdown("#### Generación de empleos")
                 col_name = '¿Cuántos empleos ha generado (aparte de usted)?' 
                 if col_name in filtered_df.columns:
                     exclude_list = ['N/A', 'Otro', 'Otros', 'No reporta', 'Sin información']
                     df_plot = filtered_df[~filtered_df[col_name].astype(str).isin(exclude_list)].copy()
                     n_valid = len(df_plot)
-                    st.caption(f"Muestra: {n_valid} de {n_total} registros analizados.")
+                    #st.caption(f"Muestra: {n_valid} de {n_total} registros analizados.")
                     fig_emp = px.histogram(
                         df_plot,
                         x=col_name,
@@ -745,12 +870,12 @@ if 'master_df' in st.session_state:
                         color= col_name,
                     )
                     fig_emp.update_layout(showlegend=False, yaxis_title="Frecuencia",xaxis_title="Número de empleos", xaxis={'categoryorder':'total descending'})
-                    
+                    formalizar_grafico(fig_emp, "Generación de empleos", n_valid, n_total)
                     st.plotly_chart(fig_emp, width='stretch')
 
             # --- FILA 3: Apoyos y Canales (Digitalización Insight) ---
             st.divider()
-            st.write(" #### Actividad económica")
+            #st.write(" #### Actividad económica")
             unit_col = '¿Cuál es la actividad económica del emprendimiento o empresa?' 
             
             if unit_col in filtered_df.columns and not filtered_df.empty:
@@ -760,7 +885,7 @@ if 'master_df' in st.session_state:
                 unit_data.columns = [unit_col, 'Cantidad']
                 n_valid = len(df_plot)
                 
-                st.caption(f"Muestra: {n_valid} de {n_total} registros analizados.")
+                #st.caption(f"Muestra: {n_valid} de {n_total} registros analizados.")
                 
                 fig_unit = px.bar(
                     unit_data, 
@@ -772,6 +897,7 @@ if 'master_df' in st.session_state:
                 )
                 # Al estar fuera del bloque 'with', ocupará todo el ancho disponible
                 fig_unit.update_layout(xaxis_title="Cantidad", yaxis_title="Actividad económica", showlegend=False)
+                formalizar_grafico(fig_unit, "Actividad económica", n_valid, n_total)
                 st.plotly_chart(fig_unit, width='stretch')
             else:
                 st.info("No hay datos disponibles para Actividad económica.")
@@ -793,9 +919,10 @@ if 'master_df' in st.session_state:
                         text_auto=True,
                     )
                     fig_act.update_layout(xaxis_title="", yaxis_title="Cantidad", xaxis={'categoryorder':'total descending'})
+                    formalizar_grafico(fig_act, "Actividad económica", n_valid, n_total)
                     st.plotly_chart(fig_act, width='stretch')
 
-            st.write(" #### Canales de comunicación")
+            #st.write(" #### Canales de comunicación")
             column_canales = '¿Su empresa o emprendimiento cuenta con alguno de los siguientes canales de comunicación?'
 
             if column_canales in filtered_df.columns:
@@ -816,6 +943,7 @@ if 'master_df' in st.session_state:
                             text_auto=True, color='Canal',
                         )
                         fig_canales.update_layout(showlegend=False, xaxis_title="", yaxis_title="Cantidad de menciones", height=500, xaxis={'categoryorder':'total descending'})
+                        formalizar_grafico(fig_canales, "Canales de comunicación", n_valid, n_total)
                         st.plotly_chart(fig_canales, width="stretch")
                     else:
                         st.info("No hay datos registrados sobre canales de comunicación.")
